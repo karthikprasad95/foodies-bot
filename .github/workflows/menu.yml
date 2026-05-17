@@ -1,0 +1,30 @@
+name: Daily Lunch Menu
+
+on:
+  schedule:
+    # Runs at both 6:30 and 7:30 UTC — covers 8:30 AM Amsterdam in CEST and CET
+    - cron: "30 6 * * 1-5"
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch: # allows manual trigger from GitHub UI
+
+jobs:
+  send-menu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 pytz
+
+      - name: Run bot
+        env:
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+        run: python main.py
