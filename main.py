@@ -2,7 +2,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-from urllib.parse import urlencode
+from urllib.parse import quote
 import pytz
 
 MENU_URL = "https://foodies-ams.nl/weekly-menu"
@@ -107,8 +107,10 @@ def format_message(day_name: str, date_str: str, menu: dict, is_current: bool) -
 
 
 def send_whatsapp(message: str):
-    params = {"phone": PHONE, "text": message, "apikey": API_KEY}
-    url = f"{CALLMEBOT_URL}?{urlencode(params)}"
+    # Build URL manually so the + in the phone number doesn't get encoded as %2B
+    phone = PHONE.lstrip("+")  # strip + if present, we add it manually
+    text = quote(message)
+    url = f"{CALLMEBOT_URL}?phone=%2B{phone}&text={text}&apikey={API_KEY}"
     r = requests.get(url, timeout=15)
     print(f"CallMeBot status {r.status_code}: {r.text}")
     r.raise_for_status()
