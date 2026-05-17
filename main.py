@@ -33,7 +33,8 @@ def today():
     return now.strftime("%A"), now.strftime("%d %b")
 
 
-def scrape_menu(day_name: str) -> dict:
+def scrape_menu(day_name: str, date_str: str) -> tuple[dict, bool]:
+    """Returns (menu dict, is_current) where is_current=False means stale menu."""
     r = requests.get(MENU_URL, timeout=15)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
@@ -46,7 +47,13 @@ def scrape_menu(day_name: str) -> dict:
             break
 
     if not day_header:
-        return {}
+        return {}, False
+
+    # Check if the date in the heading matches today
+    # Heading looks like "Monday 19.05" — extract the date part
+    header_text = day_header.get_text(strip=True)  # e.g. "Monday 19.05"
+    today_ddmm = datetime.now(TZ).strftime("%d.%m")  # e.g. "19.05"
+    is_current = today_ddmm in header_text
 
     menu = {}
     current_cat = None
@@ -71,14 +78,19 @@ def scrape_menu(day_name: str) -> dict:
                 if item:
                     menu[current_cat].append(item)
 
-    return menu
+    return menu, is_current
 
 
-def format_message(day_name: str, date_str: str, menu: dict) -> str:
+def format_message(day_name: str, date_str: str, menu: dict, is_current: bool) -> str:
     lines = [f"🍽️ *Foodies — {day_name} {date_str}*", ""]
 
+    if not is_current and menu:
+        lines.append("⚠️ *Menu not updated yet for today — this may be last week's. Check the site to be sure:*")
+        lines.append("https://foodies-ams.nl/weekly-menu")
+        lines.append("")
+
     if not menu:
-        lines.append("No menu found for today. Check https://foodies-ams.nl/weekly-menu")
+        lines.append("❌ No menu found for today. Check https://foodies-ams.nl/weekly-menu")
         return "\n".join(lines)
 
     for cat, items in menu.items():
@@ -102,12 +114,23 @@ def send_whatsapp(message: str):
     r.raise_for_status()
 
 
+def is_correct_run_time() -> bool:
+    """Returns True only if it's 8:xx AM Amsterdam — guards against the off-season UTC cron fire."""
+    return datetime.now(TZ).hour == 8
+
+
 def main():
     day_name, date_str = today()
+
+    # DST guard: cron fires at two UTC times, only one will match 8 AM Amsterdam
+    if not is_correct_run_time():
+        print("Not the right Amsterdam time — exiting silently.")
+        return
+
     print(f"Fetching menu for {day_name} {date_str}...")
 
-    menu = scrape_menu(day_name)
-    msg  = format_message(day_name, date_str, menu)
+    menu, is_current = scrape_menu(day_name, date_str)
+    msg = format_message(day_name, date_str, menu, is_current)
 
     print("\n--- MESSAGE PREVIEW ---")
     print(msg)
