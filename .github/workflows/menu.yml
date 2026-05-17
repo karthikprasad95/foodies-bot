@@ -27,4 +27,5 @@ jobs:
         env:
           WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
           CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+          MANUAL_TRIGGER: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: python main.py
