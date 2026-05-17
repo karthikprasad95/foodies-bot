@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+# 8:30 AM Amsterdam time (CEST = UTC+2), weekdays only
+cronSchedule = "30 6 * * 1-5"
+startCommand = "python main.py"
