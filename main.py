@@ -110,7 +110,7 @@ def send_whatsapp(message: str):
     # Build URL manually so the + in the phone number doesn't get encoded as %2B
     phone = PHONE.lstrip("+")  # strip + if present, we add it manually
     text = quote(message)
-    url = f"{CALLMEBOT_URL}?phone=%2B{phone}&text={text}&apikey={API_KEY}"
+    url = f"{CALLMEBOT_URL}?phone=+{phone}&text={text}&apikey={API_KEY}"
     r = requests.get(url, timeout=15)
     print(f"CallMeBot status {r.status_code}: {r.text}")
     r.raise_for_status()
