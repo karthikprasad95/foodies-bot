@@ -115,7 +115,10 @@ def send_whatsapp(message: str):
 
 
 def is_correct_run_time() -> bool:
-    """Returns True only if it's 8:xx AM Amsterdam — guards against the off-season UTC cron fire."""
+    """Returns True only if it's 8:xx AM Amsterdam — guards against the off-season UTC cron fire.
+    Skips the check if triggered manually."""
+    if os.environ.get("MANUAL_TRIGGER") == "true":
+        return True
     return datetime.now(TZ).hour == 8
 
 
